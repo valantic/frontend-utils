@@ -1,0 +1,39 @@
+{
+  "name": "@valantic/frontend-utils",
+  "version": "0.0.0",
+  "description": "A set of reusable frontend utils",
+  "type": "module",
+  "lastDependencyUpdate": "15.12.2025",
+  "scripts": {
+    "release": "npm version patch -m 'Release %s' && git push --follow-tags",
+    "release:minor": "npm version minor -m 'Release %s' && git push --follow-tags",
+    "release:major": "npm version major -m 'Release %s' && git push --follow-tags",
+    "clean:caches": "rm -rf .stylelintcache node_modules/.cache",
+    "fix:stylelint": "npm run lint:stylelint -- --cache=false --config .stylelintrc.fix.js --fix",
+    "lint": "npm run lint:stylelint",
+    "lint:stylelint": "stylelint 'src/**/*.?(vue|scss)'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:valantic/frontend-utils.git"
+  },
+  "engines": {
+    "node": ">=22 <25",
+    "npm": ">=10 <12"
+  },
+  "keywords": [
+    "scss",
+    "valantic"
+  ],
+  "author": "valantic CEC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/valantic/frontend-utils/issues"
+  },
+  "homepage": "https://github.com/valantic/frontend-utils",
+  "devDependencies": {
+    "sass": "~1.93.2",
+    "stylelint": "~16.24.0",
+    "stylelint-config-valantic": "~9.1.0"
+  }
+}
