@@ -3,7 +3,6 @@ import eslintConfigPrettier from 'eslint-config-prettier/flat';
 import eslintConfigValanticPrettier from 'eslint-config-valantic/prettier-vue.js';
 import eslintConfigValanticTypescript from 'eslint-config-valantic/typescript.js';
 import eslintConfigValantic from 'eslint-config-valantic/vue.js';
-import tseslint from 'typescript-eslint';
 
 // https://eslint.org/docs/user-guide/configuring
 export default [
@@ -13,7 +12,7 @@ export default [
   ...eslintConfigValanticPrettier,
   eslintConfigPrettier,
   {
-    ignores: ['dist/', 'node_modules/', 'public/', '**/.DS_Store', 'src/styleguide/translations.json'],
+    ignores: ['dist/', 'node_modules/', '**/.DS_Store'],
   },
   {
     languageOptions: {
@@ -22,9 +21,8 @@ export default [
       },
     },
     rules: {
-      // TODO: Fix and enable again
-      'unicorn/no-array-sort': 'off',
-      'unicorn/no-array-reverse': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/no-useless-undefined': 'off',
       'import/extensions': 'off',
       'no-undefined': 'off',
       'vue/no-unsupported-features': [
@@ -33,18 +31,6 @@ export default [
           version: '^3.5.0',
         },
       ],
-    },
-  },
-  {
-    files: ['*.vue', '**/*.vue'],
-    languageOptions: {
-      parserOptions: {
-        parser: tseslint.parser,
-      },
-    },
-    rules: {
-      'vue/multi-word-component-names': 'off',
-      'vue/component-definition-name-casing': 'off',
     },
   },
 ];
