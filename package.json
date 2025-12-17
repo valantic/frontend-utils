@@ -1,6 +1,6 @@
 {
   "name": "@valantic/frontend-utils",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A set of reusable frontend utils",
   "type": "module",
   "lastDependencyUpdate": "15.12.2025",
