@@ -15,13 +15,12 @@
     "importHelpers": true,
     "lib": ["es2021", "es2022", "dom", "dom.iterable"],
     "typeRoots": ["./src/types", "./node_modules/@types/", "./node_modules/"],
-    "types": ["node", "vite/client"],
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@!production/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "tests/**/*.ts", "tests/**/*.tsx", "vite.config.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],
   "exclude": ["node_modules"]
 }
