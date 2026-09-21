@@ -11,6 +11,14 @@ export type ApiRequestConfig = {
   signal?: AbortSignal;
   /** Milliseconds before the request is aborted; `0` disables the timeout. */
   timeout?: number;
+  /**
+   * How to read the response body. Defaults to reading it as text and attempting `JSON.parse`,
+   * falling back to the raw text when that fails. Set explicitly for binary downloads (`'blob'`,
+   * `'arraybuffer'`), to force strict JSON parsing (`'json'`, throws on invalid JSON), or to always
+   * get the raw text back (`'text'`). Applied on both success and error responses, so
+   * `error.response.data` matches the same shape.
+   */
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   /** Passed through to `fetch` untouched. */
   // eslint-disable-next-line no-undef -- `RequestCredentials` is a type-only DOM lib global, not a runtime value, so it is unknown to eslint's `no-undef`.
   credentials?: RequestCredentials;
@@ -134,6 +142,42 @@ function isRawBody(data: unknown): data is FormData | URLSearchParams | Blob | A
     data instanceof ReadableStream ||
     typeof data === 'string'
   );
+}
+
+/**
+ * Reads and parses a response body according to `responseType`. Undefined `responseType` reads the
+ * body as text and attempts `JSON.parse`, falling back to the raw text when that fails (this is
+ * `apiRequest`'s default behavior); every other `responseType` is read via the matching `Response`
+ * method, with `'json'` propagating a rejection if the body isn't valid JSON.
+ */
+async function parseResponseBody(response: Response, responseType: ApiRequestConfig['responseType']): Promise<unknown> {
+  switch (responseType) {
+    case 'blob':
+      return response.blob();
+
+    case 'arraybuffer':
+      return response.arrayBuffer();
+
+    case 'text':
+      return response.text();
+
+    case 'json':
+      return response.json();
+
+    default: {
+      const text = await response.text();
+
+      if (!text) {
+        return text;
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    }
+  }
 }
 
 /**
@@ -288,15 +332,17 @@ export function isSilentAbortError(error: unknown): boolean {
 }
 
 /**
- * Issues an HTTP request via native `fetch`: JSON body parsing into `data`, rejection on a non-2xx
+ * Issues an HTTP request via native `fetch`: response body parsing into `data` (JSON by default,
+ * or `blob`/`arraybuffer`/`text`/strict `json` via `config.responseType`), rejection on a non-2xx
  * response carrying the parsed body at `.response.data`, `params` → query-string serialization,
  * and a combined abort/timeout signal — all without depending on Vue, Pinia, or any other
  * framework.
  *
  * @param options - The request itself: method, url, optional body data, default headers, and an
  *   optional `defaultTimeout` overriding `API_DEFAULT_TIMEOUT` for this call site.
- * @param config - Optional per-request configuration (headers, params, signal, timeout, ...).
- *   `config.timeout` wins over `options.defaultTimeout`, which wins over `API_DEFAULT_TIMEOUT`.
+ * @param config - Optional per-request configuration (headers, params, signal, timeout,
+ *   responseType, ...). `config.timeout` wins over `options.defaultTimeout`, which wins over
+ *   `API_DEFAULT_TIMEOUT`.
  * @returns A promise resolving to a standardized `ApiResult`.
  *
  * @example @see /tests/helpers/api-request.test.ts
@@ -345,16 +391,7 @@ export default async function apiRequest(options: ApiRequestOptions, config?: Ap
     referrerPolicy: config?.referrerPolicy,
   });
 
-  const text = await response.text();
-  let data: unknown = text;
-
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
-  }
+  const data = await parseResponseBody(response, config?.responseType);
 
   const result: ApiResult = {
     data,

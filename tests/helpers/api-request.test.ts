@@ -189,6 +189,95 @@ describe('apiRequest', () => {
     expect(result.data).toBe('');
   });
 
+  describe('responseType', () => {
+    it('should return the raw Blob when responseType is blob', async () => {
+      const blob = new Blob(['binary content']);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        blob: () => Promise.resolve(blob),
+      });
+
+      const result = await apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' });
+
+      expect(result.data).toBe(blob);
+    });
+
+    it('should return the raw ArrayBuffer when responseType is arraybuffer', async () => {
+      const buffer = new ArrayBuffer(8);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: () => Promise.resolve(buffer),
+      });
+
+      const result = await apiRequest({ method: 'GET', url: '/download' }, { responseType: 'arraybuffer' });
+
+      expect(result.data).toBe(buffer);
+    });
+
+    it('should return the raw text without attempting JSON.parse when responseType is text', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        text: () => Promise.resolve('{"a":1}'),
+      });
+
+      const result = await apiRequest({ method: 'GET', url: '/test' }, { responseType: 'text' });
+
+      expect(result.data).toBe('{"a":1}');
+    });
+
+    it('should strictly JSON-parse via response.json() when responseType is json', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: () => Promise.resolve({ explicit: true }),
+      });
+
+      const result = await apiRequest({ method: 'GET', url: '/test' }, { responseType: 'json' });
+
+      expect(result.data).toEqual({ explicit: true });
+    });
+
+    it('should reject when responseType is json and the body is not valid JSON', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      });
+
+      await expect(apiRequest({ method: 'GET', url: '/test' }, { responseType: 'json' })).rejects.toThrow(
+        SyntaxError,
+      );
+    });
+
+    it('should apply responseType to error responses too, so error.response.data matches', async () => {
+      const blob = new Blob(['error body']);
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers(),
+        blob: () => Promise.resolve(blob),
+      });
+
+      await expect(
+        apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' }),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({ data: blob }),
+      });
+    });
+  });
+
   it('should throw an ApiError with the parsed response for a non-ok status', async () => {
     mockFetch.mockResolvedValue({
       ok: false,

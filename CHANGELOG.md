@@ -20,3 +20,8 @@
   per method per project (previously only `get()` supported it in vue-template). Also fixes a related bug ported
   unchanged from the old axios-based `api.ts`: a caller-supplied `config.signal` is now preserved and combined with
   the de-duplication signal, rather than silently discarded when a `uniqueId` is also given.
+- `apiRequest` now accepts `config.responseType` (`'json' | 'text' | 'blob' | 'arraybuffer'`) for binary downloads or
+  strict JSON parsing. Applies to both success and error responses, so `error.response.data` matches the same shape.
+  Leaving it unset keeps the existing default behavior (read as text, attempt `JSON.parse`, fall back to the raw
+  text) unchanged. Restores the response-type support dropped when `createFetchInstance` was superseded by
+  `apiRequest`.
