@@ -73,6 +73,11 @@ export type ApiRequestOptions = {
   url: string;
   data?: unknown;
   defaultHeaders?: Record<string, string>;
+  /**
+   * Overrides `API_DEFAULT_TIMEOUT` as this call's fallback timeout, used when `config.timeout`
+   * isn't set. A per-request `config.timeout` still wins over this.
+   */
+  defaultTimeout?: number;
 };
 
 /**
@@ -81,8 +86,8 @@ export type ApiRequestOptions = {
 const DEFAULT_ACCEPT_HEADER = 'application/json, text/plain, */*';
 
 /**
- * Default request timeout in milliseconds, applied unless a per-request `config.timeout` overrides
- * it; `0` disables the timeout.
+ * Default request timeout in milliseconds, applied unless a per-request `config.timeout` or a
+ * per-call `options.defaultTimeout` overrides it; `0` disables the timeout.
  */
 export const API_DEFAULT_TIMEOUT = 30_000;
 
@@ -288,8 +293,10 @@ export function isSilentAbortError(error: unknown): boolean {
  * and a combined abort/timeout signal — all without depending on Vue, Pinia, or any other
  * framework.
  *
- * @param options - The request itself: method, url, optional body data, and default headers.
+ * @param options - The request itself: method, url, optional body data, default headers, and an
+ *   optional `defaultTimeout` overriding `API_DEFAULT_TIMEOUT` for this call site.
  * @param config - Optional per-request configuration (headers, params, signal, timeout, ...).
+ *   `config.timeout` wins over `options.defaultTimeout`, which wins over `API_DEFAULT_TIMEOUT`.
  * @returns A promise resolving to a standardized `ApiResult`.
  *
  * @example @see /tests/helpers/api-request.test.ts
@@ -321,7 +328,8 @@ export default async function apiRequest(options: ApiRequestOptions, config?: Ap
     }
   }
 
-  const signal = combineAbortSignals([config?.signal, createTimeoutSignal(config?.timeout ?? API_DEFAULT_TIMEOUT)]);
+  const timeout = config?.timeout ?? options.defaultTimeout ?? API_DEFAULT_TIMEOUT;
+  const signal = combineAbortSignals([config?.signal, createTimeoutSignal(timeout)]);
 
   // `credentials` is left at the platform default (sends cookies for same-origin requests) unless
   // the caller opts into a different value.

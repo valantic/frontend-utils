@@ -1,6 +1,7 @@
 /* eslint-disable id-length */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import apiRequest, {
+  API_DEFAULT_TIMEOUT,
   ApiError,
   appendQueryString,
   buildQueryString,
@@ -247,6 +248,57 @@ describe('apiRequest', () => {
         referrerPolicy: 'no-referrer',
       }),
     );
+  });
+
+  describe('timeout precedence', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        text: () => Promise.resolve(''),
+      });
+    });
+
+    it('falls back to API_DEFAULT_TIMEOUT when neither config.timeout nor options.defaultTimeout is set', async () => {
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+
+      await apiRequest({ method: 'GET', url: '/test' });
+
+      expect(timeoutSpy).toHaveBeenCalledWith(API_DEFAULT_TIMEOUT);
+
+      timeoutSpy.mockRestore();
+    });
+
+    it('uses options.defaultTimeout as the fallback when config.timeout is not set', async () => {
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+
+      await apiRequest({ method: 'GET', url: '/test', defaultTimeout: 5000 });
+
+      expect(timeoutSpy).toHaveBeenCalledWith(5000);
+
+      timeoutSpy.mockRestore();
+    });
+
+    it('lets config.timeout override options.defaultTimeout', async () => {
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+
+      await apiRequest({ method: 'GET', url: '/test', defaultTimeout: 5000 }, { timeout: 1000 });
+
+      expect(timeoutSpy).toHaveBeenCalledWith(1000);
+
+      timeoutSpy.mockRestore();
+    });
+
+    it('disables the timeout when config.timeout is 0, even with a defaultTimeout set', async () => {
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+
+      await apiRequest({ method: 'GET', url: '/test', defaultTimeout: 5000 }, { timeout: 0 });
+
+      expect(timeoutSpy).not.toHaveBeenCalled();
+
+      timeoutSpy.mockRestore();
+    });
   });
 });
 
