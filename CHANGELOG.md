@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- [DOCS] Added a Documentation section to AGENTS.md requiring feature docs to live in this repo's own `docs/` folder
+  (indexed by `docs/README.md`), separate from the workspace-level `docs/`.
 - Moved all helper functions from the vue-template repo to this one and added tests for them.
 - Added `apiRequest` (`src/helpers/api-request.ts`), a dependency-free `fetch`-based HTTP request function (JSON body
   handling, query param serialization matching axios' prior `key[]=value` format, combined abort/timeout signals via

@@ -41,3 +41,15 @@ Releases (`npm run release[:minor|:major]`) bump the version and push tags — d
   already exist there (`unicorn/prevent-abbreviations`, `vue/no-unsupported-features`, etc.).
 - Tests run in `jsdom` via Vitest; use `vi.fn()`/fake timers as needed for helpers like `debounce` that depend on
   `setTimeout`.
+
+## Documentation
+
+This repo keeps its own feature docs in a `docs/` folder (with an index at `docs/README.md`) — this is separate from
+the workspace-level `docs/` at the root of `valantic/` and must not be skipped in favor of it.
+
+- Every helper (or a small group of closely related helpers, e.g. `apiRequest` + `ApiError`) gets one Markdown file
+  under `docs/` covering usage, options, and any non-obvious behavior or migration notes that go beyond what the
+  JSDoc block on the function itself documents.
+- When adding, changing, or removing a helper, update the matching doc in the same change — do not defer it to a
+  follow-up task.
+- `docs/README.md` is the index; add a one-line link to every new doc file there.
