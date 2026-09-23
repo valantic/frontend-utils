@@ -2,8 +2,13 @@
 
 ## unreleased
 
+- Added a `files` allow-list (`["src"]`) to `package.json` so installing via the `github:` dependency reference only
+  pulls `src/` (plus `package.json`, `LICENSE`, `README.md`) — dev/test files, `docs/`, and config are no longer
+  installed by consumers.
 - [DOCS] Added a Documentation section to AGENTS.md requiring feature docs to live in this repo's own `docs/` folder
   (indexed by `docs/README.md`), separate from the workspace-level `docs/`.
+- [DOCS] Added `docs/api-request.md` and `docs/dedupe-request.md` (plus a `docs/README.md` index) covering usage,
+  behavior, and limitations of `apiRequest` and `dedupeRequest`.
 - Moved all helper functions from the vue-template repo to this one and added tests for them.
 - Added `apiRequest` (`src/helpers/api-request.ts`), a dependency-free `fetch`-based HTTP request function (JSON body
   handling, query param serialization matching axios' prior `key[]=value` format, combined abort/timeout signals via

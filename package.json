@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "A set of reusable frontend utils",
   "type": "module",
+  "files": [
+    "src"
+  ],
   "lastDependencyUpdate": "15.12.2025",
   "scripts": {
     "release": "npm version patch -m 'Release %s' && git push --follow-tags",

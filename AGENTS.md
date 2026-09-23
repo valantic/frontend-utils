@@ -8,7 +8,9 @@ this repository.
 `@valantic/frontend-utils` is a small, dependency-free library of standalone JS/TS helper functions. It is consumed by
 other valantic projects (e.g. `vue-template`) via a GitHub dependency reference
 (`github:valantic/frontend-utils#<version>`), not published to the npm registry as a built package — there is no build
-step, `main`, or `exports` field in `package.json`. Consumers import directly from `src/`.
+step, `main`, or `exports` field in `package.json`. Consumers import directly from `src/`. `package.json`'s `files`
+field limits what gets installed via the `github:` reference to `src` (plus `package.json`, `LICENSE`, `README.md`,
+which npm always includes) — dev/test files, `docs/`, and config are excluded.
 
 ## Commands
 
