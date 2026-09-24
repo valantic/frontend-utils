@@ -8,6 +8,7 @@ import apiRequest, {
   combineAbortSignals,
   createTimeoutSignal,
   isSilentAbortError,
+  resolveErrorResponseType,
 } from '@/helpers/api-request';
 
 describe('apiRequest', () => {
@@ -259,14 +260,14 @@ describe('apiRequest', () => {
       );
     });
 
-    it('should apply responseType to error responses too, so error.response.data matches', async () => {
+    it('should apply a binary responseType to a genuinely binary error response', async () => {
       const blob = new Blob(['error body']);
 
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/octet-stream' }),
         blob: () => Promise.resolve(blob),
       });
 
@@ -274,6 +275,23 @@ describe('apiRequest', () => {
         apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' }),
       ).rejects.toMatchObject({
         response: expect.objectContaining({ data: blob }),
+      });
+    });
+
+    it('should ignore a binary responseType for an error response whose Content-Type is JSON', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        text: () => Promise.resolve('{"error":"invalid"}'),
+      });
+
+      await expect(
+        apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' }),
+      ).rejects.toMatchObject({
+        name: 'ApiError',
+        response: expect.objectContaining({ data: { error: 'invalid' } }),
       });
     });
   });
@@ -293,6 +311,23 @@ describe('apiRequest', () => {
       response: expect.objectContaining({ status: 404, data: { error: 'not found' } }),
     });
     await expect(apiRequest({ method: 'GET', url: '/missing' })).rejects.toBeInstanceOf(ApiError);
+  });
+
+  it('should reject with an ApiError carrying code ERR_NETWORK on a raw fetch rejection', async () => {
+    mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(apiRequest({ method: 'GET', url: '/test' })).rejects.toMatchObject({
+      name: 'ApiError',
+      code: 'ERR_NETWORK',
+      status: undefined,
+      response: undefined,
+    });
+  });
+
+  it('should not wrap an abort/timeout rejection as ERR_NETWORK', async () => {
+    mockFetch.mockRejectedValue(new DOMException('Aborted', 'AbortError'));
+
+    await expect(apiRequest({ method: 'GET', url: '/test' })).rejects.toMatchObject({ name: 'AbortError' });
   });
 
   it('should pass an explicit AbortSignal through and reject when it fires', async () => {
@@ -476,6 +511,37 @@ describe('createTimeoutSignal', () => {
     expect(signal?.aborted).toBe(true);
 
     vi.useRealTimers();
+  });
+});
+
+describe('resolveErrorResponseType', () => {
+  it('should leave the responseType unchanged for a success response', () => {
+    const response = new Response(null, { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+    expect(resolveErrorResponseType(response, 'blob')).toBe('blob');
+  });
+
+  it('should leave a non-binary responseType unchanged for an error response', () => {
+    const response = new Response(null, { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+    expect(resolveErrorResponseType(response, 'text')).toBe('text');
+    expect(resolveErrorResponseType(response, undefined)).toBeUndefined();
+  });
+
+  it('should override a binary responseType with the default parser for a JSON/text error body', () => {
+    const jsonResponse = new Response(null, { status: 500, headers: { 'Content-Type': 'application/json' } });
+    const textResponse = new Response(null, { status: 500, headers: { 'Content-Type': 'text/plain' } });
+
+    expect(resolveErrorResponseType(jsonResponse, 'blob')).toBeUndefined();
+    expect(resolveErrorResponseType(textResponse, 'arraybuffer')).toBeUndefined();
+  });
+
+  it('should keep a binary responseType for a genuinely binary or content-type-less error body', () => {
+    const binaryResponse = new Response(null, { status: 500, headers: { 'Content-Type': 'application/octet-stream' } });
+    const noContentTypeResponse = new Response(null, { status: 500 });
+
+    expect(resolveErrorResponseType(binaryResponse, 'blob')).toBe('blob');
+    expect(resolveErrorResponseType(noContentTypeResponse, 'blob')).toBe('blob');
   });
 });
 

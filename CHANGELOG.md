@@ -2,6 +2,9 @@
 
 ## unreleased
 
+- Added a local `id-length` override in `eslint.config.js` allowing `ok` as an identifier (used in `api-request.ts`
+  for `Response#ok`). Quickfix until `eslint-config-valantic` releases this upstream and the dependency is bumped,
+  at which point this override can be removed.
 - Added a `files` allow-list (`["src"]`) to `package.json` so installing via the `github:` dependency reference only
   pulls `src/` (plus `package.json`, `LICENSE`, `README.md`) — dev/test files, `docs/`, and config are no longer
   installed by consumers.
@@ -32,3 +35,13 @@
   Leaving it unset keeps the existing default behavior (read as text, attempt `JSON.parse`, fall back to the raw
   text) unchanged. Restores the response-type support dropped when `createFetchInstance` was superseded by
   `apiRequest`.
+- `apiRequest` no longer parses a non-2xx response with a `'blob'`/`'arraybuffer'` `responseType` when the response's
+  own `Content-Type` indicates a JSON/text/XML body — it parses as JSON/text instead, so `error.response.data` on a
+  binary-download endpoint's error is a usable parsed object rather than an unusable `Blob`/`ArrayBuffer`. A
+  genuinely binary error body still honors the requested `responseType`. See `resolveErrorResponseType`
+  (`src/helpers/api-request.ts`) and `docs/api-request.md`.
+- `apiRequest` now wraps its `fetch()` call: a genuine network failure (offline, DNS failure, connection refused,
+  CORS block) rejects with an `ApiError` carrying a stable `code: 'ERR_NETWORK'` (mirroring axios' own
+  `ERR_NETWORK`), instead of the browser's raw, unwrapped `fetch` rejection. Aborts and timeouts are unaffected —
+  `isSilentAbortError` still recognizes those and they continue to reject with the native rejection, not an
+  `ApiError`.

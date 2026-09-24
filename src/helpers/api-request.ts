@@ -15,8 +15,10 @@ export type ApiRequestConfig = {
    * How to read the response body. Defaults to reading it as text and attempting `JSON.parse`,
    * falling back to the raw text when that fails. Set explicitly for binary downloads (`'blob'`,
    * `'arraybuffer'`), to force strict JSON parsing (`'json'`, throws on invalid JSON), or to always
-   * get the raw text back (`'text'`). Applied on both success and error responses, so
-   * `error.response.data` matches the same shape.
+   * get the raw text back (`'text'`). Applied as given on a success response; on a non-2xx response,
+   * a `'blob'`/`'arraybuffer'` request is ignored in favor of the response's actual `Content-Type`
+   * when that indicates a JSON/text body, since error responses are essentially never genuinely
+   * binary regardless of what the success response would have been — see `resolveErrorResponseType`.
    */
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   /** Passed through to `fetch` untouched. */
@@ -181,6 +183,43 @@ async function parseResponseBody(response: Response, responseType: ApiRequestCon
 }
 
 /**
+ * Returns `true` when a `Content-Type` header value indicates a JSON or text body (as opposed to a
+ * genuinely binary one), used to decide whether an error response should be parsed as JSON/text
+ * regardless of the `responseType` the caller requested for the success path.
+ */
+function isJsonOrTextContentType(contentType: string | null): boolean {
+  return contentType !== null && /json|text|xml/i.test(contentType);
+}
+
+/**
+ * Resolves the `responseType` to use for parsing a response body: unchanged for a success response,
+ * but for a non-2xx response, a `'blob'`/`'arraybuffer'` request is overridden with the default
+ * (JSON-with-text-fallback) parsing whenever the response's own `Content-Type` says the body is
+ * JSON/text/XML, since an error response is essentially never actually binary. A genuinely binary
+ * error body (or one with no readable `Content-Type`) still falls back to the requested type.
+ *
+ * @param response - The response to inspect.
+ * @param requestedResponseType - The `responseType` requested by the caller.
+ * @returns The `responseType` to actually parse the body with.
+ *
+ * @example @see /tests/helpers/api-request.test.ts
+ */
+export function resolveErrorResponseType(
+  response: Response,
+  requestedResponseType: ApiRequestConfig['responseType'],
+): ApiRequestConfig['responseType'] {
+  if (response.ok || (requestedResponseType !== 'blob' && requestedResponseType !== 'arraybuffer')) {
+    return requestedResponseType;
+  }
+
+  if (isJsonOrTextContentType(response.headers.get('content-type'))) {
+    return undefined;
+  }
+
+  return requestedResponseType;
+}
+
+/**
  * Serializes a params object into a query string (no leading `?`): `undefined`/`null` entries are
  * dropped (checked explicitly, never by truthiness, so `false`/`0`/`''` survive), array values are
  * appended once per element under `` `${key}[]` ``, and everything is percent-encoded via
@@ -333,10 +372,12 @@ export function isSilentAbortError(error: unknown): boolean {
 
 /**
  * Issues an HTTP request via native `fetch`: response body parsing into `data` (JSON by default,
- * or `blob`/`arraybuffer`/`text`/strict `json` via `config.responseType`), rejection on a non-2xx
- * response carrying the parsed body at `.response.data`, `params` → query-string serialization,
- * and a combined abort/timeout signal — all without depending on Vue, Pinia, or any other
- * framework.
+ * or `blob`/`arraybuffer`/`text`/strict `json` via `config.responseType`, see
+ * `resolveErrorResponseType` for how a non-2xx response handles a binary `responseType`), rejection
+ * on a non-2xx response carrying the parsed body at `.response.data`, a genuine network failure
+ * (offline, DNS, CORS, ...) rejecting with an `ApiError` carrying `code: 'ERR_NETWORK'` rather than
+ * the browser's raw `fetch` rejection, `params` → query-string serialization, and a combined
+ * abort/timeout signal — all without depending on Vue, Pinia, or any other framework.
  *
  * @param options - The request itself: method, url, optional body data, default headers, and an
  *   optional `defaultTimeout` overriding `API_DEFAULT_TIMEOUT` for this call site.
@@ -377,21 +418,31 @@ export default async function apiRequest(options: ApiRequestOptions, config?: Ap
   const timeout = config?.timeout ?? options.defaultTimeout ?? API_DEFAULT_TIMEOUT;
   const signal = combineAbortSignals([config?.signal, createTimeoutSignal(timeout)]);
 
-  // `credentials` is left at the platform default (sends cookies for same-origin requests) unless
-  // the caller opts into a different value.
-  const response = await fetch(finalUrl, {
-    method: options.method,
-    headers,
-    body,
-    signal,
-    credentials: config?.credentials,
-    mode: config?.mode,
-    cache: config?.cache,
-    redirect: config?.redirect,
-    referrerPolicy: config?.referrerPolicy,
-  });
+  let response: Response;
 
-  const data = await parseResponseBody(response, config?.responseType);
+  try {
+    // `credentials` is left at the platform default (sends cookies for same-origin requests) unless
+    // the caller opts into a different value.
+    response = await fetch(finalUrl, {
+      method: options.method,
+      headers,
+      body,
+      signal,
+      credentials: config?.credentials,
+      mode: config?.mode,
+      cache: config?.cache,
+      redirect: config?.redirect,
+      referrerPolicy: config?.referrerPolicy,
+    });
+  } catch (error) {
+    if (isSilentAbortError(error)) {
+      throw error;
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : 'Network Error', { code: 'ERR_NETWORK' });
+  }
+
+  const data = await parseResponseBody(response, resolveErrorResponseType(response, config?.responseType));
 
   const result: ApiResult = {
     data,

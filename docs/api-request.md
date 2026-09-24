@@ -46,9 +46,14 @@ with `?` or `&` depending on whether the URL already has a query string.
 
 A non-2xx response rejects with an `ApiError` (a real `Error` subclass, `error.name === 'ApiError'`)
 carrying `status` and `response` — `error.response.data` holds the parsed body, parsed the same way
-as a successful response (respecting `responseType`). A network failure or abort rejects with
-whatever `fetch`/`AbortController` throws natively (not wrapped in `ApiError`) — see
-`isSilentAbortError` below for telling those apart from a real failure.
+as a successful response, respecting `responseType` — except a `'blob'`/`'arraybuffer'` request is
+overridden when the response's own `Content-Type` indicates a JSON/text/XML body (see Response body
+parsing below); a caller-triggered abort or a timeout rejects with the native `AbortController`
+rejection unwrapped (see `isSilentAbortError` below). A genuine network failure (offline, DNS
+failure, connection refused, CORS block — i.e. `fetch` itself rejecting) instead rejects with an
+`ApiError` carrying `code: 'ERR_NETWORK'` and no `status`/`response`, so callers have one stable way
+to detect "the request never reached the server" instead of pattern-matching on the browser's own
+error message text.
 
 ### Response body parsing (`responseType`)
 
@@ -62,7 +67,13 @@ explicitly to:
 - `'blob'` / `'arraybuffer'` — for binary downloads.
 
 `responseType` is applied to error responses too, so `error.response.data` has the same shape as a
-successful `result.data`.
+successful `result.data` — **except** a `'blob'`/`'arraybuffer'` request: for a non-2xx response, that
+is overridden with the default text/`JSON.parse` behavior whenever the response's `Content-Type`
+indicates JSON/text/XML, since an error response is essentially never actually binary regardless of
+what the success response would have been (a binary download endpoint's validation/auth failure is
+almost always a JSON error body, not binary). A genuinely binary error body (or one with no readable
+`Content-Type`) still honors the requested `responseType`. See `resolveErrorResponseType` in
+`api-request.ts` for the exact logic.
 
 ### Timeouts
 
@@ -112,9 +123,11 @@ try {
   silently becomes the raw response text rather than rejecting — only `responseType: 'json'` gives a
   hard failure on invalid JSON. Don't rely on the default parsing to validate that an API actually
   returned JSON.
-- **A network failure or abort is not an `ApiError`** — only a non-2xx HTTP response is. Code that
-  branches on `error instanceof ApiError` to read `error.response.data` must have a separate branch
-  (or use `isSilentAbortError`) for network/abort failures, which carry no `response`.
+- **An abort/timeout is not an `ApiError`** — only a non-2xx HTTP response or a genuine network
+  failure (`code: 'ERR_NETWORK'`) is. Code that branches on `error instanceof ApiError` to read
+  `error.response.data` must also check `error.response` is defined (network failures carry no
+  `response`, only `code`), and have a separate branch (or use `isSilentAbortError`) for abort/timeout
+  failures, which are neither an `ApiError` nor carry a `response`.
 - **No progress events or streaming upload/download support** beyond what raw `fetch` already offers
   (e.g. reading `Response.body` yourself) — `apiRequest` always awaits the full body via
   `parseResponseBody`.
