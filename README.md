@@ -1,18 +1,28 @@
+<div align="center">
+
+![valantic frontend-utils banner](.github/assets/banner.jpeg)
+
 # valantic frontend utils
+
+**A set of reusable frontend utils.**
+
+[**Report an Issue**](https://github.com/valantic/frontend-utils/issues/new) ·
+[**Request a Feature**](https://github.com/valantic/frontend-utils/issues/new?labels=enhancement)
+
+</div>
+
+---
+
+## About this project
 
 A reusable library of frontend utilities, and helper functions designed for scalable and maintainable frontend projects.
 
-This package is also part of your [vue-template](https://github.com/valantic/vue-template) a boilerplate (starting point) for a vue3 project.
+This package is also part of your [vue-template](https://github.com/valantic/vue-template) a boilerplate (starting
+point) for a vue3 project.
 
-## Changelog
-
-See all per version here: [CHANGELOG.md](./CHANGELOG.md)
-
-## Requirements
+## Quickstart
 
 Your project needs at least **node 22**.
-
-## Installation
 
 To install this utilities package, add it to your `package.json` like this:
 
@@ -28,10 +38,23 @@ And then run:
 npm install @valantic/frontend-utils
 ```
 
+## Changelog
+
+See all per version here: [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
+<div align="center">
+
+## from valantic - with love
+
+Built and maintained by [valantic](https://www.valantic.com/en/careers/) — we're hiring, check out
+our [open positions](https://www.valantic.com/en/careers/).
+
 ## License
-This project is licensed under the MIT License.
 
+[MIT](https://opensource.org/licenses/MIT)
 
-## Contributing
+Copyright (c) 2017-present, valantic CEC Schweiz AG
 
-We welcome contributions! If you’d like to make improvements, submit a pull request or open an issue.
+</div>
