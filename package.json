@@ -1,12 +1,15 @@
 {
   "name": "@valantic/frontend-utils",
-  "version": "0.0.1",
   "description": "A set of reusable frontend utils",
-  "type": "module",
-  "files": [
-    "src"
-  ],
+  "author": "valantic CEC",
+  "license": "MIT",
+  "version": "0.0.1",
   "lastDependencyUpdate": "15.12.2025",
+  "type": "module",
+  "engines": {
+    "node": ">=22 <26",
+    "npm": ">=10 <12"
+  },
   "scripts": {
     "release": "npm version patch -m 'Release %s' && git push --follow-tags",
     "release:minor": "npm version minor -m 'Release %s' && git push --follow-tags",
@@ -19,24 +22,6 @@
     "test:unit": "vitest --dir tests",
     "prettier": "prettier . --write"
   },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:valantic/frontend-utils.git"
-  },
-  "engines": {
-    "node": ">=22 <26",
-    "npm": ">=10 <12"
-  },
-  "keywords": [
-    "scss",
-    "valantic"
-  ],
-  "author": "valantic CEC",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/valantic/frontend-utils/issues"
-  },
-  "homepage": "https://github.com/valantic/frontend-utils",
   "devDependencies": {
     "@eslint/eslintrc": "~3.3.1",
     "@eslint/js": "~9.36.0",
@@ -55,5 +40,20 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "~8.45.0",
     "vitest": "~3.2.4"
-  }
+  },
+  "files": [
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:valantic/frontend-utils.git"
+  },
+  "keywords": [
+    "scss",
+    "valantic"
+  ],
+  "bugs": {
+    "url": "https://github.com/valantic/frontend-utils/issues"
+  },
+  "homepage": "https://github.com/valantic/frontend-utils"
 }

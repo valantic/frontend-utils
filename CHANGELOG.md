@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- [CHORE] Reordered `package.json` top-level keys to match the `vue-styleguide` boilerplate ordering.
+
 - [CHORE] Bumped `engines.node` to `>=22 <26` (was `>=22 <25`) to allow Node 25. Added `.nvmrc` (pinned to `25`) and
   `.npmrc` (`save-prefix=~`, `legacy-peer-deps=true`, `engine-strict=true`, `min-release-age=7`,
   `ignore-scripts=true`). Removed the `.gitignore` rule that previously excluded `.nvmrc` so it can be committed.
