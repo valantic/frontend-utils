@@ -1,5 +1,7 @@
 <div align="center">
 
+![valantic frontend-utils banner](.github/assets/banner.jpeg)
+
 # valantic frontend utils
 
 **A set of reusable frontend utils.**
@@ -15,7 +17,8 @@
 
 A reusable library of frontend utilities, and helper functions designed for scalable and maintainable frontend projects.
 
-This package is also part of your [vue-template](https://github.com/valantic/vue-template) a boilerplate (starting point) for a vue3 project.
+This package is also part of your [vue-template](https://github.com/valantic/vue-template) a boilerplate (starting
+point) for a vue3 project.
 
 ## Quickstart
 
@@ -45,7 +48,8 @@ See all per version here: [CHANGELOG.md](./CHANGELOG.md)
 
 ## from valantic - with love
 
-Built and maintained by [valantic](https://www.valantic.com/en/careers/) — we're hiring, check out our [open positions](https://www.valantic.com/en/careers/).
+Built and maintained by [valantic](https://www.valantic.com/en/careers/) — we're hiring, check out
+our [open positions](https://www.valantic.com/en/careers/).
 
 ## License
 
