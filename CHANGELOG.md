@@ -2,6 +2,7 @@
 
 ## unreleased
 
+- Streamlined `.github/PULL_REQUEST_TEMPLATE.md` by removing the obsolete checklist sections.
 - Added a local `id-length` override in `eslint.config.js` allowing `ok` as an identifier (used in `api-request.ts`
   for `Response#ok`). Quickfix until `eslint-config-valantic` releases this upstream and the dependency is bumped,
   at which point this override can be removed.
