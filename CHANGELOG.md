@@ -2,6 +2,9 @@
 
 ## unreleased
 
+- [DOCS] Restructured `README.md` to follow the `vue-styleguide` schema (centered header with tagline/links, `About
+  this project`, `Quickstart`) and added the shared "from valantic - with love" footer.
+
 - [CHORE] Reordered `package.json` top-level keys to match the `vue-styleguide` boilerplate ordering.
 
 - [CHORE] Bumped `engines.node` to `>=22 <26` (was `>=22 <25`) to allow Node 25. Added `.nvmrc` (pinned to `25`) and
