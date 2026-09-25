@@ -2,6 +2,10 @@
 
 ## unreleased
 
+- [CHORE] Bumped `engines.node` to `>=22 <26` (was `>=22 <25`) to allow Node 25. Added `.nvmrc` (pinned to `25`) and
+  `.npmrc` (`save-prefix=~`, `legacy-peer-deps=true`, `engine-strict=true`, `min-release-age=7`,
+  `ignore-scripts=true`). Removed the `.gitignore` rule that previously excluded `.nvmrc` so it can be committed.
+
 - Replaced the ad hoc "🚀🚀 Check project" workflow with a standard "CI Test" workflow (PR + push triggers,
   `actions/checkout@v7`, `actions/setup-node@v7`, Node 25, `npm ci`), matching the other shared-frontend repos.
 - Streamlined `.github/PULL_REQUEST_TEMPLATE.md` by removing the obsolete checklist sections.

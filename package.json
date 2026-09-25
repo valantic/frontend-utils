@@ -24,7 +24,7 @@
     "url": "git@github.com:valantic/frontend-utils.git"
   },
   "engines": {
-    "node": ">=22 <25",
+    "node": ">=22 <26",
     "npm": ">=10 <12"
   },
   "keywords": [
