@@ -6,8 +6,8 @@ with cancel-the-previous-in-flight-request de-duplication, keyed by a caller-cho
 ## Usage
 
 ```ts
-import apiRequest from '@valantic/frontend-utils/helpers/api-request';
-import dedupeRequest, { AbortStack } from '@valantic/frontend-utils/helpers/dedupe-request';
+import apiRequest from '@valantic/frontend-utils/src/helpers/api-request';
+import dedupeRequest, { AbortStack } from '@valantic/frontend-utils/src/helpers/dedupe-request';
 
 const abortStack: AbortStack = {};
 

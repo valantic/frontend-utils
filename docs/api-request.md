@@ -7,7 +7,7 @@ consumer (Vue or not) can import and version independently.
 ## Usage
 
 ```ts
-import apiRequest, { ApiError } from '@valantic/frontend-utils/helpers/api-request';
+import apiRequest, { ApiError } from '@valantic/frontend-utils/src/helpers/api-request';
 
 const result = await apiRequest(
   { method: 'GET', url: '/api/users', defaultHeaders: { locale: 'de' } },
@@ -93,7 +93,7 @@ by a caller-chosen key (e.g. re-issuing the same search-as-you-type request), se
 ### Telling abort/timeout apart from a real failure
 
 ```ts
-import apiRequest, { isSilentAbortError } from '@valantic/frontend-utils/helpers/api-request';
+import apiRequest, { isSilentAbortError } from '@valantic/frontend-utils/src/helpers/api-request';
 
 try {
   await apiRequest({ method: 'GET', url: '/api/slow' }, { timeout: 2000 });
@@ -120,9 +120,9 @@ try {
   `mode`/`cache`/`redirect`/`referrerPolicy` are passed straight through to `fetch` with no
   valantic-specific defaults.
   - When `responseType` is unset and the body parses as neither empty nor valid JSON, `result.data`
-  silently becomes the raw response text rather than rejecting — only `responseType: 'json'` gives a
-  hard failure on invalid JSON. Don't rely on the default parsing to validate that an API actually
-  returned JSON.
+    silently becomes the raw response text rather than rejecting — only `responseType: 'json'` gives a
+    hard failure on invalid JSON. Don't rely on the default parsing to validate that an API actually
+    returned JSON.
 - **An abort/timeout is not an `ApiError`** — only a non-2xx HTTP response or a genuine network
   failure (`code: 'ERR_NETWORK'`) is. Code that branches on `error instanceof ApiError` to read
   `error.response.data` must also check `error.response` is defined (network failures carry no

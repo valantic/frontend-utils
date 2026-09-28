@@ -2,6 +2,10 @@
 
 ## unreleased
 
+- [docs] Added a doc for each remaining undocumented helper (`clone`, `debounce`, `format-price`,
+  `is-element-in-viewport`, `load-script`, `process-array-in-chunks`, `prop-scale`, `scrollbar-width`) under
+  `docs/`, added a cross-cutting intro to `docs/README.md`, and fixed the `@valantic/frontend-utils/helpers/...`
+  import paths in `docs/api-request.md`/`docs/dedupe-request.md` to the actual `.../src/helpers/...` path.
 - [ci] Aligned `.github/workflows/test.yml` with the other shared-frontend repos: job `test`, step "Run tests"
   (the old label claimed checks that don't run here), Node version read from `.nvmrc`, token limited to
   `contents: read`.
