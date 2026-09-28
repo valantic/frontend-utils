@@ -49,6 +49,42 @@ asked.**
 - Tests run in `jsdom` via Vitest; use `vi.fn()`/fake timers as needed for helpers like `debounce` that depend on
   `setTimeout`.
 
+## Code conventions
+
+Follow the repo's ESLint/Stylelint/Prettier config and `.editorconfig`. On top of that:
+
+- Naming: files `kebab-case`; types, interfaces and enums `PascalCase`; functions, properties and variables
+  `camelCase`. Singular names for single things (types, enums, components, stores), plural only for collections. Use
+  whole, descriptive words — identifiers have at least 3 characters (`id-length`), except the ones whitelisted in the
+  ESLint config.
+- TypeScript: never use `any` — use `unknown` plus narrowing or a generic; if `any` is unavoidable, isolate it and
+  comment why. Use `type` for object shapes; `interface` only for features exclusive to it, without an `I` prefix.
+- Control flow: no `while` or plain `for` loops (use array methods, or `for...of` when `await`/`break`/`continue` is
+  needed), no `switch` (use object literals or `if`/`else`), no one-line `if` bodies.
+- Comments only where the code is not self-explanatory, in JSDoc style.
+
+valantic developers find the full guidelines in the internal ai-cornerstone repository (`guidelines/frontend/`, skills
+`frontend-best-practices` and `vue-best-practices`).
+
+## Working rules
+
+These rules are identical in every valantic shared-frontend repo.
+
+- Git: never commit unless explicitly asked. Never push unless explicitly asked in that request. Never pull or
+  create/switch branches (`git pull`, `git checkout`, `git switch`, `git branch`, …). Branch names are
+  `feature/<name>` or `bugfix/<name>`.
+- Never run a release script or `npm publish` unless explicitly asked.
+- Never install, update or remove npm packages without approval. Never edit generated or vendored files
+  (`node_modules/`, `dist/`, lock files by hand).
+- Priorities: correctness, simplicity, consistency with the existing code, maintainability, minimal changes. Prefer the
+  smallest correct change.
+- Understand the existing code and search for existing implementations before adding new ones; reuse over new
+  abstractions. Do not refactor unrelated code, change public APIs, or change behavior outside the task's scope.
+- Before finishing, run `npm test` and fix failures caused by the change. Every change gets a changelog entry and,
+  where a feature changes, a doc update (see Changelog and Documentation below).
+- If a requirement is unclear, ask. If only an implementation detail is unclear, follow the existing patterns in this
+  repo.
+
 ## Changelog (required for every task)
 
 `CHANGELOG.md` follows the convention shared by all valantic shared-frontend repos.
