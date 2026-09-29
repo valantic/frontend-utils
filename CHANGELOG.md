@@ -2,6 +2,11 @@
 
 ## unreleased
 
+- [fix] `.editorconfig`: removed a stray space in the `[{*.js, *.ts}]` glob (`[{*.js,*.ts}]`) that prevented it from
+  matching `*.ts` files.
+- [fix] `generate-vuln-report.py`: `worst_severity()` no longer raises `ValueError` and aborts the report step when
+  every vulnerability for a package has a severity outside `SEVERITIES` — it now falls back to the lowest rank.
+
 - [docs] Added a doc for each remaining undocumented helper (`clone`, `debounce`, `format-price`,
   `is-element-in-viewport`, `load-script`, `process-array-in-chunks`, `prop-scale`, `scrollbar-width`) under
   `docs/`, added a cross-cutting intro to `docs/README.md`, and fixed the `@valantic/frontend-utils/helpers/...`
