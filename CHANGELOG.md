@@ -2,6 +2,8 @@
 
 ## unreleased
 
+- [fix] `formatPrice`: normalizes the ASCII apostrophe grouping separator to `’`, so `de-CH` output no longer differs on
+  runtimes with newer ICU (Node 25) and its tests pass on every supported Node version.
 - [chore] `scripts/release.mjs`: dropped the temporary `master` fallback from `RELEASE_BRANCHES` now that
   `stylelint-config-valantic` has moved its default branch to `main`.
 - [fix] `.editorconfig`: removed a stray space in the `[{*.js, *.ts}]` glob (`[{*.js,*.ts}]`) that prevented it from

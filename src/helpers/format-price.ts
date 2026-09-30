@@ -46,7 +46,8 @@ export default function formatPrice({
   });
 
   const valueToFormat = isValueCentAmount ? value / 100 : value;
-  const formattedPrice = formatter.format(valueToFormat);
+  // ICU 78+ (Node 25) formats de-CH grouping with `'` instead of `’`; normalize so output is stable across runtimes.
+  const formattedPrice = formatter.format(valueToFormat).replaceAll("'", '’');
   const before = currencyBefore ? `${currency} ` : '';
   const after = currencyAfter ? ` ${currency}` : '';
 

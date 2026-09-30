@@ -29,6 +29,7 @@ formatPrice({ value: 1123.45, currencyBefore: true, locale: 'en-US', currency: '
 
 - Formatting always uses `style: 'decimal'` with exactly 2 fraction digits, regardless of `currency`.
 - `Number.isNaN(value)` returns `''` (empty string) instead of formatting `"NaN"`.
+- The grouping apostrophe is always `’` (U+2019); newer ICU versions (Node 25) would otherwise emit `'`.
 - Negative values are formatted with the locale's own minus sign (e.g. `-12’345.00`); there is no separate
   handling for negative amounts.
 - With neither `currencyBefore` nor `currencyAfter` set, the result is just the formatted number, with no
