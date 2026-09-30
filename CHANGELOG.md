@@ -2,6 +2,8 @@
 
 ## unreleased
 
+## v0.1.0
+
 - [fix] `formatPrice`: normalizes the ASCII apostrophe grouping separator to `’`, so `de-CH` output no longer differs on
   runtimes with newer ICU (Node 25) and its tests pass on every supported Node version.
 - [chore] `scripts/release.mjs`: dropped the temporary `master` fallback from `RELEASE_BRANCHES` now that

@@ -28,7 +28,7 @@ To install this utilities package, add it to your `package.json` like this:
 
 ```json
 "dependencies": {
-  "@valantic/frontend-utils": "github:valantic/frontend-utils#v0.0.1"
+  "@valantic/frontend-utils": "github:valantic/frontend-utils#v0.1.0"
 },
 ```
 
