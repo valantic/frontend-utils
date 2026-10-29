@@ -147,6 +147,70 @@ function isRawBody(data: unknown): data is FormData | URLSearchParams | Blob | A
 }
 
 /**
+ * Returns `true` when the `Content-Type` header of `headers` starts with `contentType`, compared
+ * case-insensitively (parameters such as `; charset=utf-8` are ignored).
+ */
+function hasContentType(headers: Record<string, string>, contentType: string): boolean {
+  return Object.entries(headers).some(
+    ([key, value]) =>
+      key.toLowerCase() === 'content-type' && typeof value === 'string' && value.toLowerCase().startsWith(contentType),
+  );
+}
+
+/**
+ * Returns `true` for plain `{}`-style objects (not arrays, `FormData`, `Blob`, class instances, ...).
+ */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
+  return prototype === Object.prototype || prototype === null;
+}
+
+/**
+ * Flattens a nested value into `target` using bracket notation: nested objects become
+ * `parent[child]`, arrays become `key[]`. `undefined`/`null` entries are dropped, `Blob`s (incl.
+ * `File`) are kept as-is for `FormData`, `Date`s become ISO strings (like axios) and everything
+ * else is stringified.
+ *
+ * @param target - The `FormData` or `URLSearchParams` to append to.
+ * @param value - The value to flatten.
+ * @param key - The key of `value`; an empty string for the root object.
+ *
+ * @example @see /tests/helpers/api-request.test.ts
+ */
+export function appendFormEntries(target: FormData | URLSearchParams, value: unknown, key: string): void {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((element) => appendFormEntries(target, element, `${key}[]`));
+
+    return;
+  }
+
+  if (isPlainObject(value)) {
+    Object.entries(value).forEach(([childKey, childValue]) =>
+      appendFormEntries(target, childValue, key ? `${key}[${childKey}]` : childKey),
+    );
+
+    return;
+  }
+
+  if (target instanceof FormData && value instanceof Blob) {
+    target.append(key, value);
+
+    return;
+  }
+
+  target.append(key, value instanceof Date ? value.toISOString() : String(value));
+}
+
+/**
  * Reads and parses a response body according to `responseType`. Undefined `responseType` reads the
  * body as text and attempts `JSON.parse`, falling back to the raw text when that fails (this is
  * `apiRequest`'s default behavior); every other `responseType` is read via the matching `Response`
@@ -403,11 +467,32 @@ export default async function apiRequest(options: ApiRequestOptions, config?: Ap
   // eslint-disable-next-line no-undef -- `BodyInit` is a type-only DOM lib global, not a runtime value, so it is unknown to eslint's `no-undef`.
   let body: BodyInit | undefined;
 
-  if (options.data !== undefined) {
-    if (isRawBody(options.data)) {
-      body = options.data;
+  let requestData = options.data;
+
+  if (hasContentType(headers, 'multipart/form-data')) {
+    // `fetch` must set this header itself: only it knows the multipart boundary.
+    Object.keys(headers)
+      .filter((key) => key.toLowerCase() === 'content-type')
+      .forEach((key) => delete headers[key]);
+
+    if (isPlainObject(requestData)) {
+      const formData = new FormData();
+
+      appendFormEntries(formData, requestData, '');
+      requestData = formData;
+    }
+  } else if (hasContentType(headers, 'application/x-www-form-urlencoded') && isPlainObject(requestData)) {
+    const searchParameters = new URLSearchParams();
+
+    appendFormEntries(searchParameters, requestData, '');
+    requestData = searchParameters;
+  }
+
+  if (requestData !== undefined) {
+    if (isRawBody(requestData)) {
+      body = requestData;
     } else {
-      body = JSON.stringify(options.data);
+      body = JSON.stringify(requestData);
 
       if (!hasHeader(headers, 'content-type')) {
         headers['Content-Type'] = 'application/json';
