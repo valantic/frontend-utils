@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import apiRequest, {
   API_DEFAULT_TIMEOUT,
   ApiError,
+  appendFormEntries,
   appendQueryString,
   buildQueryString,
   combineAbortSignals,
@@ -65,14 +66,14 @@ describe('apiRequest', () => {
     });
 
     await apiRequest(
-      { method: 'GET', url: '/test', defaultHeaders: { locale: 'de', 'X-Common': 'common' } },
+      { method: 'GET', url: '/test', defaultHeaders: { 'locale': 'de', 'X-Common': 'common' } },
       { headers: { locale: 'en' } },
     );
 
     expect(mockFetch).toHaveBeenCalledWith(
       '/test',
       expect.objectContaining({
-        headers: expect.objectContaining({ locale: 'en', 'X-Common': 'common' }),
+        headers: expect.objectContaining({ 'locale': 'en', 'X-Common': 'common' }),
       }),
     );
   });
@@ -136,6 +137,134 @@ describe('apiRequest', () => {
 
     expect(callOptions.body).toBe(formData);
     expect(callOptions.headers['Content-Type']).toBeUndefined();
+  });
+
+  describe('form content types', () => {
+    const okResponse = { ok: true, status: 200, headers: new Headers(), text: () => Promise.resolve('') };
+
+    it('should serialize a plain object as bracket-notation url-encoded body', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await apiRequest(
+        { method: 'POST', url: '/login', data: { loginForm: { email: 'a@b.test', password: 'p&ss' } } },
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+      );
+
+      const [, callOptions] = mockFetch.mock.calls.at(-1) as [string, { body: URLSearchParams; headers: object }];
+
+      expect(callOptions.body).toBeInstanceOf(URLSearchParams);
+      expect(callOptions.body.get('loginForm[email]')).toBe('a@b.test');
+      expect(callOptions.body.get('loginForm[password]')).toBe('p&ss');
+      expect(callOptions.headers).toEqual(
+        expect.objectContaining({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+      );
+    });
+
+    it('should pass a string body through for a url-encoded content type', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await apiRequest(
+        { method: 'POST', url: '/login', data: 'a=1' },
+        { headers: { 'content-type': 'application/x-www-form-urlencoded' } },
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith('/login', expect.objectContaining({ body: 'a=1' }));
+    });
+
+    it('should drop a caller-supplied multipart Content-Type so fetch can add the boundary', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      const formData = new FormData();
+
+      formData.append('name', 'value');
+
+      await apiRequest(
+        { method: 'POST', url: '/upload', data: formData },
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+
+      const [, callOptions] = mockFetch.mock.calls.at(-1) as [
+        string,
+        { body: unknown; headers: Record<string, string> },
+      ];
+
+      expect(callOptions.body).toBe(formData);
+      expect(Object.keys(callOptions.headers).map((key) => key.toLowerCase())).not.toContain('content-type');
+    });
+
+    it('should convert a plain object to FormData for a multipart content type', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await apiRequest(
+        { method: 'POST', url: '/upload', data: { tags: ['a', 'b'], skipped: undefined } },
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+
+      const [, callOptions] = mockFetch.mock.calls.at(-1) as [string, { body: FormData; headers: object }];
+
+      expect(callOptions.body).toBeInstanceOf(FormData);
+      expect(callOptions.body.getAll('tags[]')).toEqual(['a', 'b']);
+      expect(callOptions.body.has('skipped')).toBe(false);
+      expect(callOptions.headers).not.toHaveProperty('Content-Type');
+    });
+  });
+
+  describe('form content type edge cases', () => {
+    const okResponse = { ok: true, status: 200, headers: new Headers(), text: () => Promise.resolve('') };
+
+    it('should match a content type with parameters and different casing', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await apiRequest(
+        { method: 'POST', url: '/upload', data: { a: '1' } },
+        { headers: { 'content-type': 'Multipart/Form-Data; charset=utf-8' } },
+      );
+
+      const [, callOptions] = mockFetch.mock.calls.at(-1) as [string, { body: FormData; headers: object }];
+
+      expect(callOptions.body).toBeInstanceOf(FormData);
+      expect(Object.keys(callOptions.headers).map((key) => key.toLowerCase())).not.toContain('content-type');
+    });
+
+    it('should apply the form handling for a content type from defaultHeaders', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await apiRequest({
+        method: 'POST',
+        url: '/login',
+        data: { a: '1' },
+        defaultHeaders: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+
+      const [, callOptions] = mockFetch.mock.calls.at(-1) as [string, { body: URLSearchParams }];
+
+      expect(callOptions.body.get('a')).toBe('1');
+    });
+
+    it('should drop the multipart content type and pass a string body through', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await apiRequest(
+        { method: 'POST', url: '/upload', data: 'raw' },
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+
+      const [, callOptions] = mockFetch.mock.calls.at(-1) as [string, { body: string; headers: object }];
+
+      expect(callOptions.body).toBe('raw');
+      expect(callOptions.headers).not.toHaveProperty('Content-Type');
+    });
+
+    it('should not throw on a non-string header value', async () => {
+      mockFetch.mockResolvedValue(okResponse);
+
+      await expect(
+        apiRequest(
+          { method: 'POST', url: '/x', data: { a: 1 } },
+          { headers: { 'Content-Type': undefined as unknown as string } },
+        ),
+      ).resolves.toBeDefined();
+    });
   });
 
   it('should append serialized query params to the URL', async () => {
@@ -255,9 +384,7 @@ describe('apiRequest', () => {
         json: () => Promise.reject(new SyntaxError('Unexpected token')),
       });
 
-      await expect(apiRequest({ method: 'GET', url: '/test' }, { responseType: 'json' })).rejects.toThrow(
-        SyntaxError,
-      );
+      await expect(apiRequest({ method: 'GET', url: '/test' }, { responseType: 'json' })).rejects.toThrow(SyntaxError);
     });
 
     it('should apply a binary responseType to a genuinely binary error response', async () => {
@@ -271,9 +398,7 @@ describe('apiRequest', () => {
         blob: () => Promise.resolve(blob),
       });
 
-      await expect(
-        apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' }),
-      ).rejects.toMatchObject({
+      await expect(apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' })).rejects.toMatchObject({
         response: expect.objectContaining({ data: blob }),
       });
     });
@@ -287,9 +412,7 @@ describe('apiRequest', () => {
         text: () => Promise.resolve('{"error":"invalid"}'),
       });
 
-      await expect(
-        apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' }),
-      ).rejects.toMatchObject({
+      await expect(apiRequest({ method: 'GET', url: '/download' }, { responseType: 'blob' })).rejects.toMatchObject({
         name: 'ApiError',
         response: expect.objectContaining({ data: { error: 'invalid' } }),
       });
@@ -564,5 +687,56 @@ describe('ApiError', () => {
     expect(error.status).toBe(500);
     expect(error.code).toBe('SERVER');
     expect(error.response).toBe(response);
+  });
+});
+
+describe('appendFormEntries', () => {
+  it('should flatten nested objects and arrays into bracket notation and drop empty values', () => {
+    const searchParameters = new URLSearchParams();
+
+    appendFormEntries(searchParameters, { a: { b: 1, c: [2, 3] }, d: null, e: undefined, f: false }, '');
+
+    expect([...searchParameters.entries()]).toEqual([
+      ['a[b]', '1'],
+      ['a[c][]', '2'],
+      ['a[c][]', '3'],
+      ['f', 'false'],
+    ]);
+  });
+
+  it('should serialize a Date as ISO string', () => {
+    const searchParameters = new URLSearchParams();
+
+    appendFormEntries(searchParameters, { at: new Date('2026-01-02T03:04:05.000Z') }, '');
+
+    expect(searchParameters.get('at')).toBe('2026-01-02T03:04:05.000Z');
+  });
+
+  it('should flatten arrays of objects', () => {
+    const searchParameters = new URLSearchParams();
+
+    appendFormEntries(searchParameters, { items: [{ id: 1 }, { id: 2 }] }, '');
+
+    expect([...searchParameters.entries()]).toEqual([
+      ['items[][id]', '1'],
+      ['items[][id]', '2'],
+    ]);
+  });
+
+  it('should flatten a null-prototype object', () => {
+    const searchParameters = new URLSearchParams();
+
+    appendFormEntries(searchParameters, Object.assign(Object.create(null), { a: 1 }), '');
+
+    expect(searchParameters.get('a')).toBe('1');
+  });
+
+  it('should keep a Blob as-is when appending to FormData', () => {
+    const formData = new FormData();
+    const file = new File(['content'], 'import.csv');
+
+    appendFormEntries(formData, { file }, '');
+
+    expect((formData.get('file') as File).name).toBe('import.csv');
   });
 });

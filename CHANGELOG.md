@@ -2,6 +2,9 @@
 
 ## unreleased
 
+- [fix] `apiRequest`: plain-object bodies are sent as multipart or url-encoded form data (bracket notation) for form
+  `Content-Type`s, and a manual multipart `Content-Type` is dropped so `fetch` adds the boundary, like axios did.
+
 ## v0.1.0
 
 - [fix] `formatPrice`: normalizes the ASCII apostrophe grouping separator to `’`, so `de-CH` output no longer differs on
@@ -48,7 +51,7 @@
   convention.
 
 - [docs] Restructured `README.md` to follow the `vue-styleguide` schema (centered header with tagline/links, `About
-  this project`, `Quickstart`) and added the shared "from valantic - with love" footer.
+this project`, `Quickstart`) and added the shared "from valantic - with love" footer.
 
 - [chore] Reordered `package.json` top-level keys to match the `vue-styleguide` boilerplate ordering.
 

@@ -33,7 +33,15 @@ result.ok; // true
 unless it's one of the types `fetch` accepts untouched (`FormData`, `URLSearchParams`, `Blob`,
 `ArrayBuffer`, `ReadableStream`, or a plain `string`), in which case it's passed through as-is with
 no `Content-Type` forced. A caller-supplied `Content-Type` (or `Accept`) header always wins — it's
-never overwritten.
+never overwritten — with one exception for form content types (matching what axios did):
+
+- `Content-Type: multipart/form-data`: the header is removed, because only `fetch` knows the multipart
+  boundary it has to contain. A plain-object `data` is converted to `FormData` first.
+- `Content-Type: application/x-www-form-urlencoded`: a plain-object `data` is serialized as
+  `URLSearchParams` (a string `data` is sent as-is).
+
+Both serializations use bracket notation via `appendFormEntries`: nested objects become `a[b]`, arrays
+become `a[]`, `undefined`/`null` entries are dropped, `Date` values become ISO strings and `File`/`Blob` values are kept in `FormData`.
 
 ### Query params
 
