@@ -2,6 +2,8 @@
 
 ## unreleased
 
+## v0.1.1
+
 - [fix] `apiRequest`: plain-object bodies are sent as multipart or url-encoded form data (bracket notation) for form
   `Content-Type`s, and a manual multipart `Content-Type` is dropped so `fetch` adds the boundary, like axios did.
 
