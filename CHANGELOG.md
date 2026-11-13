@@ -2,6 +2,9 @@
 
 ## unreleased
 
+- [build] `npm run release` now asks which release type (patch, minor, major) to make; `release:patch` added as the
+  non-interactive variant.
+
 ## v0.1.1
 
 - [fix] `apiRequest`: plain-object bodies are sent as multipart or url-encoded form data (bracket notation) for form
